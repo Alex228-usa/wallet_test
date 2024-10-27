@@ -1,55 +1,44 @@
-// components/Deposit.tsx
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ethers } from 'ethers';
-import WalletConnection from './WalletConnection';
 
 const Deposit = () => {
-  const [walletBalance, setWalletBalance] = useState<string>('0');
-  const [depositAmount, setDepositAmount] = useState<string>('0');
-
-  const handleMaxClick = () => {
-    setDepositAmount(walletBalance);
-  };
+  const [amount, setAmount] = useState<string>('');
 
   const handleDeposit = async () => {
-    if (!window.ethereum) {
-      alert('MetaMask is not installed.');
+    if (typeof window.ethereum === 'undefined') {
+      console.error('MetaMask is not installed');
       return;
     }
 
     try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner();
-      const depositAmountInWei = ethers.utils.parseUnits(depositAmount, 'ether');
+      // Create a new Web3Provider instance
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      
+      // Replace the "..." with the actual address or transaction data needed for the deposit
+      const transaction = {
+        to: "...", // Address where the deposit goes
+        value: ethers.parseEther(amount), // Convert amount to Wei
+      };
 
-      const transaction = await signer.sendTransaction({
-        to: 'YOUR_DEPOSIT_CONTRACT_ADDRESS', // Replace with Antix deposit contract address
-        value: depositAmountInWei
-      });
+      // Send transaction
+      const txResponse = await signer.sendTransaction(transaction);
+      await txResponse.wait(); // Wait for the transaction to be mined
 
-      await transaction.wait(); // Wait for transaction to be confirmed
-
-      alert('Deposit successful!');
+      console.log("Deposit successful:", txResponse);
     } catch (error) {
-      console.error('Deposit failed:', error);
+      console.error("Error during deposit:", error);
     }
   };
 
   return (
     <div>
-      <h3>Deposit Balance: {walletBalance} ETH</h3>
-      <WalletConnection onBalanceUpdate={(balance) => setWalletBalance(balance)} />
-
-      <div>
-        <label>You send</label>
-        <input
-          type="number"
-          value={depositAmount}
-          onChange={(e) => setDepositAmount(e.target.value)}
-        />
-        <button onClick={handleMaxClick}>Max</button>
-      </div>
-
+      <input
+        type="text"
+        placeholder="Enter deposit amount"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+      />
       <button onClick={handleDeposit}>Deposit Now</button>
     </div>
   );
